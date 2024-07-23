@@ -5,5 +5,10 @@
 
 ![1](https://github.com/user-attachments/assets/f10cee26-8825-4863-a152-3eded4bad04f)
 
-
+### 价值
+云计算带来技术及商业模式的双重创新： 
+>技术创新：云计算=虚拟化+集群管理 
+>商业创新：从“购买软硬件产品”向“购买信息服务”转变
+云计算的价值体现在：
+![2](https://github.com/user-attachments/assets/864fa910-cc89-4ade-b0ea-5ca8d5695e4d)
 
