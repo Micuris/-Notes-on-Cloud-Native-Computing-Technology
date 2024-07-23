@@ -1,1 +1,1 @@
-# -Notes-on-Cloud-Native-Computing-Technology
+# Notes-on-Cloud-Native-Computing-Technology
