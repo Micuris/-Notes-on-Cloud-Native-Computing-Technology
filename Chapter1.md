@@ -3,6 +3,7 @@
 狭义云计算指的是IT基础设施的交付和使用模式，通过网络以按需、以拓展的方式获得所需的资源
 广义云计算指的是服务的交付和使用模式，通过网络以按需、易扩展的方式获得所需的服务；这种服务可以是IT和软件、互联网相关的，也可以是任意其他的服务，它具有超大规模、虚拟化、可靠安全等独特功效。
 
-![image](https://github.com/user-attachments/assets/40b322f6-0e30-4608-b4b7-b20dfc783e28)
+![1](https://github.com/user-attachments/assets/f10cee26-8825-4863-a152-3eded4bad04f)
+
 
 
