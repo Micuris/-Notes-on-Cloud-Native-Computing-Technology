@@ -344,14 +344,14 @@ Kubernetes Scheduler负责Pod调度，其作用是将待调度的Pod按照特定
 Kubernetes集群中，每个Node上都会启动一个kubelet服务进程；该进程负责处理Master下发到本节点的任务，管理Pod及Pod中的容器  
 每个kubelet进程都会在API Server上注册节点自身的信息，定期向Master汇报节点资源的使用情况，并通过cAdvisor监控容器和节点资源  
 
-kubelet主要功能如下：
-&emsp;&emsp;节点管理
-&emsp;&emsp;Pod管理
-&emsp;&emsp;容器健康检查
-&emsp;&emsp;&emsp;&emsp;1. LivenessProbe探针
-&emsp;&emsp;&emsp;&emsp;2. ReadinessProbe探针
+kubelet主要功能如下：  
+&emsp;&emsp;节点管理  
+&emsp;&emsp;Pod管理  
+&emsp;&emsp;容器健康检查  
+&emsp;&emsp;&emsp;&emsp;1. LivenessProbe探针  
+&emsp;&emsp;&emsp;&emsp;2. ReadinessProbe探针  
 &emsp;&emsp;cAdvisor资源监控
-
+  
 kube-proxy
 Kubernetes集群中，每个Node上都会启动一个kubeproxy服务进程；可将该进程视为Service的透明代理兼负载均衡器，其核心功能是将某个Service的访问请求转发到后端的多个Pod实例上
 kube-proxy 针 对 Service 和 Pod 创 建 的 一 些主要iptables规则如下：
@@ -371,11 +371,70 @@ StorageClass：从以上可以看出，管理员负责创建PV，用户通过PVC
 
 CSI：Kubernetes从1.9版本开始引入容器存储接口Container Storage Interface（CSI）机制，目标是在Kubernetes和外部存储系统之间建立一套标准的存储管理接口，通过该接口提供存储服务
 
+##### PV
+PV作为存储资源，是与后端实际的存储系统直接关联的，它可以是块存储系统提供的一个块设备，比如分布式存储系统Ceph的RBD、传统存储阵列的Lun；也可以是共享文件存储系统，比如NFS的一个共享目录。因为与实际存储系统有关，所以PV主要包括了下面几项关键信息。  
+&emsp;&emsp;存储能力：当前主要是指存储空间（比如5Gi），未来可能会支持IOPS、IO带宽等其他存储指标；  
+&emsp;&emsp;存储卷模式：主要是指后端存储类型是文件系统（Filesystem）还是块设备（Block）  
+&emsp;&emsp;访问模式：PV的访问模式代表了应用对存储的访问权限，主要包括如下三种：  
+&emsp;&emsp;&emsp;&emsp;ReadWriteOnce：读写权限，只能被单个Node挂载  
+&emsp;&emsp;&emsp;&emsp;ReadOnlyMany：只读权限，允许被多个Node挂载  
+&emsp;&emsp;&emsp;&emsp;ReadWriteMany：读写权限，允许被多个Node挂载  
+&emsp;&emsp;回收策略：支持保留、回收空间、删除三种策略  
+&emsp;&emsp;挂载参考：与具体后端存储类型有关，不同后端存储挂载参数存在差异  
+&emsp;&emsp;节点亲和性：通过节点亲和性可以确保PV只能被某些Node访问，使用这些PV的POD也就只能被调度到这些Node上  
 
+*Tips：PV的生命周期独立于POD的生命周期，Kubernetes通过引入PV实际上是实现了存储于计算的分离，解耦了POD与Volume生命周期关联。*
+![image](https://github.com/user-attachments/assets/11f082c9-a409-4d8e-853b-e3ebd83459c5)
 
+##### PVC
+PVC是用户对存储资源申请的说明，主要包括存储空间、访问模式等信息，这些说明与PV的关键信息是对应的。Kubernetes系统会根据用户PVC的申明，自动绑定到符合条件的PV上。  
+在Kubernetes中引入PVC主要原因在于职责分离：PVC是用户申明的，用户只需要关系自己所需存储的空间、读写模式等信息，而不需要关心存储后端；与存储后端相关的信息在PV中，这部分是由管理员统一运维和管控的。
+![image](https://github.com/user-attachments/assets/4a2f95fa-5947-4cc6-a1a3-6dc1a5a8ef5a)
 
+##### StorageClass
+StorageClass实现了Volume的动态创建，可以认为StorageClass是前面介绍的创建PV的模板，它包含了创建某种具体类型PV所需的参数信息，用户创建PVC时指定所用的SC，系统会自动创建对应的PV，并将PV绑定到PVC。使用SC，可以最大程度减轻管理云手工管理PV的工作负担。
+![image](https://github.com/user-attachments/assets/3fbc747b-d2b7-4792-91c1-3af67688408b)
 
+##### CSI机制
+CSI是Kubernetes推出的与容器对接的存储接口标准，存储提供方只需要基于标准接口进行存储插件的实现，就能使用Kubernetes的原生存储机制为容器提供存储服务。在CSI成为Kubernetes的存储接口标准以后，存储供应方的代码有存储插件开发方进行维护，和Kubernetes的代码彻底解耦，部署也与Kubernetes核心组件分离。基于CSI的存储插件机制也称为“out of tree”的服务提供方式，是未来Kubernetes第三方存储插件的标准方案。
+ 
+CSI主要包括两种组件：  
+&emsp;&emsp;CSI Controller：它的功能是提供存储服务视角对存储资源和存储卷进行管理和操作，一般将其部署为单副本POD，可以使用StatefulSet或者Deployment控制器进行部署。CSI Controller中包含了CSI Driver，通过这些Driver，CSI Controller与外部存储系统进行交互，实现实际存储卷的创建、删除等操作。  
+&emsp;&emsp;CSI Node：它主要功能是对Node节点上的Volume进行管理和操作，由于需要在所有Node节点上部署，因此建议将其部署为DaemonSet。CSI Node中也包含了CSI Driver，这里的CSI Driver主要功能是实现与Node相关的卷操作功能，比如将创建好的Volume挂载在Node上。
 
+#### Kubernetes网络概述
+Kubernetes网络设计遵循并满足：  
+一个基础原则：  
+&emsp;&emsp;每个Pod都拥有一个独立的IP地址，并假定所有Pod都在一个可以直接连通的、扁平的网络空间中。  
+
+三个基本条件：  
+&emsp;&emsp;所有Pod可以与其他Pod直接通信，无需显示使用NAT  
+&emsp;&emsp;所有Node可以与所有Pod直接通信，无需显示使用NAT  
+&emsp;&emsp;Pod可见的IP地址和对外展示给用户的IP是同一个  
+
+基于以上原则及条件，Kubernetes网络方案需要考虑如下：  
+四大目标：  
+&emsp;&emsp;容器与容器之间的通信  
+&emsp;&emsp;Pod与Pod之间的通信  
+&emsp;&emsp;Pod与Service之间的通信  
+&emsp;&emsp;集群外部与内部组件之间的通信  
+
+#### Kubernetes 网络实现
+##### 容器到容器
+同一Pod内的容器共享同一个网络命名空间，共享同一个Linux协议栈。因此容器到容器之间的网络通信，可视为它们在同一台机器上，甚至可用localhost地址访问彼此的端口，不需要针对网络进行特别的修改。  
+Kubernetes的Pod网络模型如下图所示：
+![image](https://github.com/user-attachments/assets/7931b8e3-225a-4424-a24e-0e55e10e0017)
+
+##### Pod到Pod
+每一个Pod都有一个真实的全局IP地址，同一个Node内的不同Pod之间可以直接采用对方Pod的IP地址通信，且不需要采用其他发现机制，如DNS、Consul或etcd。根据Pod所处的Node，Pod间的通信可划分为如下两类：  
+同一Node内Pod之间的通信
+![image](https://github.com/user-attachments/assets/1f290909-8c9f-44a0-8d98-0ee0dc6bea99)
+&emsp;&emsp;Pod1和Pod2均通过Veth连接到同一个docker0网桥上，他们的IP地址IP1、IP2与网桥本身的IP3属于同一网段  
+&emsp;&emsp;Pod1和Pod2的Linux协议栈上默认路由均为docker0的地址，因此所有非本地地址的网络数据，都会被默认发送到docker0网桥上，由docker0网桥直接中转
+
+不同Node上Pod之间的通信  
+![image](https://github.com/user-attachments/assets/2e3cf801-7101-4506-9e3e-3df56f2bfce3)
+Pod1在访问Pod2时，首先要将数据从源Node的eth0发送出去，找到并到达Node2的eth0,即先完成IP3到IP4的传递，在完成IP4到IP2的传递
 
 
 
