@@ -1,3 +1,4 @@
+# Chapter 2
 ## 云计算基础设施及核心技术
 ### 云计算基础设施的概念
 IaaS是云计算服务商提供的一种服务，它主要是指基础设施资源相关的云服务产品，通常主要指虚拟化计算、虚拟化存储、虚拟化网络等基础资源，以及配套的操作系统镜像、系统维护、数据备份等内容。IaaS一般是通过互联网向用户提供对虚拟化环境中IT资源的访问，通过IaaS，企业就可以在虚拟化资源上构建自己的IT平台，而不需要自己维护各种各样的硬件资源。
@@ -426,7 +427,8 @@ Kubernetes的Pod网络模型如下图所示：
 ![image](https://github.com/user-attachments/assets/7931b8e3-225a-4424-a24e-0e55e10e0017)
 
 ##### Pod到Pod
-每一个Pod都有一个真实的全局IP地址，同一个Node内的不同Pod之间可以直接采用对方Pod的IP地址通信，且不需要采用其他发现机制，如DNS、Consul或etcd。根据Pod所处的Node，Pod间的通信可划分为如下两类：  
+每一个Pod都有一个真实的全局IP地址，同一个Node内的不同Pod之间可以直接采用对方Pod的IP地址通信，且不需要采用其他发现机制，如DNS、Consul或etcd。根据Pod所处的Node，Pod间的通信可划分为如下两类： 
+
 同一Node内Pod之间的通信
 ![image](https://github.com/user-attachments/assets/1f290909-8c9f-44a0-8d98-0ee0dc6bea99)
 &emsp;&emsp;Pod1和Pod2均通过Veth连接到同一个docker0网桥上，他们的IP地址IP1、IP2与网桥本身的IP3属于同一网段  
@@ -436,14 +438,80 @@ Kubernetes的Pod网络模型如下图所示：
 ![image](https://github.com/user-attachments/assets/2e3cf801-7101-4506-9e3e-3df56f2bfce3)
 Pod1在访问Pod2时，首先要将数据从源Node的eth0发送出去，找到并到达Node2的eth0,即先完成IP3到IP4的传递，在完成IP4到IP2的传递
 
+##### Pod和Service
+Kubernetes Service管理一系列的Pods，每个Service有一个虚拟IP，要访问Service管理的Pod上的服务只需要访问Service IP即可。相较于Pod IP，Service IP是固定的，即无论Service下出现Pod规模改变、故障重启、Node重启等情况，使用Service的用户均是无感知的，因为他们使用的Service IP没有变。  
+Kubernetes会给Service自动创建负载均衡器，当数据包到达Service的虚拟IP后，数据包会被负载均衡器路由到Pod容器上；
+在此过程中涉及如下：
+###### Netfilter  
+Linux内建的网络框架  
+允许使用者自定义处理接口实现各种与网络相关的操作  
+为包过滤、网络地址转换、端口转换提供各种功能和操作  
+###### Netfilter相关的钩子函数
+NF_IP_PRE_ROUTING  
+NF_IP_LOCAL_IN  
+NF_IP_FORWARD  
+NF_IP_LOCAL_OUT  
+NF_IP_POST_ROUTING  
 
+###### iptables
+运行在用户态的用户程序   
+基于表来管理规则  
+用于定义使用Netfilter框架的操作和转换数据包的规则  
+支持如下Table（优先级从高到底）  
+&emsp;&emsp;RAW表  
+&emsp;&emsp;MANGLE表  
+&emsp;&emsp;NAT表  
+&emsp;&emsp;FILTER表  
 
+###### IPVS
+构建在Netfilter之上，实现传输层负载平衡    
+它包含在LVS（Linux虚拟服务器）中，在主机上运行，并在真实服务器集群前充当负载均衡器；    
+创建流程    
+1. 在Node上创建虚拟IPVS接口
+2. 将Service的IP地址绑定到虚拟IPVS接口
+3. 为每个Service额IP地址创建IPVS服务器
 
+##### CNI介绍
+容器网络接口（Container Network Interface，简称CNI）定义的是对容器网络进行操作和配置的规范，不同厂商可以通过插件的方式针对CNI规范进行不同的实现。CNI规范仅关注在创建容器时分配网络资源、在销毁容器时删除网络资源。  
+CNI Plugin主要需要实现两方面的功能：  
+&emsp;&emsp;为容器配置网络资源，比如将容器加入某个网络  
+&emsp;&emsp;对容器IP地址进行分配和管理  
+CNI插件的实现需要保证符合Kubernetes的网络基本要求，即保证K8S集群中所有POD（不管是否在一个Node上）相互之间IP可达。
+![image](https://github.com/user-attachments/assets/e4b9e13a-d97a-49a1-a519-bfafdafd1c3f)
 
+##### 开源网络插件介绍
+| 网络插件 | 概述 | 隔离策略 | 说明 |
+|:-------:|:----:|:--------:|:----:|
+| Flannel | 目前最为普遍的实现，提供多种网络后端实现，覆盖多种场景 | 支持 | 安装配置相对容易：Flannel被打包为单个二进制文件FlannelD，部分版本的Kubernetes默认安装Flannel<br>无需专用的数据存储：可通过使用Kubernetes集群的现有etcd集群来使用API存储其状态信息<br>主要配置第3层IPv4 Overlay网络 |
+| Calico | 采用BGP提供网络直连，功能丰富，对底层网络有要求；与其他插件对比，Calico灵活性最强，是目前的企业级主流插件 | 支持 | 部署简单：用户可通过应用单个manifest文件快速部署Calico<br>配置第3层网络，该网络使用BGP路由协议在主机之间路由数据包<br>Calico还可以与服务网格Istio集成，以便在服务网格层和网络基础架构层中解释和实施集群内工作负载的策略 |
+| Weave | 在集群中的每个节点之间创建网状Overlay网络，参与者之间可以灵活路由；但Weave会对整个网络简单加密，增加网络开销 | 支持 | Weave依赖于网络中每台主机上安装的路由组件，这些路由器交换拓扑信息，以维护可用网络环境的最新视图<br>Weave可以使用NaCl加密来为sleeve流量自动加密所有路由流量，而对于快速数据路径流量，因为它需要加密内核中的VXLAN流量，Weave会使用IPsec ESP来加密快速数据路径流量 |
 
+### 工作负载
+#### 应用编排与控制器模式
+“编排”主要是解决应用生命周期内的自动化运维操作问题。在应用部署、运行的过程中，通常需要对其进行如左下所示的各类运维操作，这些操作复杂度高、工作量大，传统人力运维方式难以应对。针对上述问题，Kubernetes提供了“编排”能力，来自动化完成这些运维操作。  
+控制器模式是k8s的编排实现模式。编排是允许用户通过“模板”定义应用的“终态”（即期望应用达到的状态），然后通过一组独立的、可组合的控制过程，连续地将应用从当前状态“调谐”到用户定义的最终态，即模板声明的应用状态，实现应用的自动化部署运维。用于定义应用终态的是“编排模板”，具体完成这个编排“调谐”过程的组件称为“控制器”。
+![image](https://github.com/user-attachments/assets/61c9c892-b9f3-4e03-a980-244ab2fa4d9d)
 
+#### 应用编排与控制器类型
+Pod是应用的一个子集，应用是对Pod的扩展。Pod是k8s中编排调度的最小单位，可以用来定义一个简单的应用（编排模板），由“Kubelet”完成其控制器逻辑。但生产中一个真实的应用及其编排往往要复杂的多，需要在Pod模型基础上进行更高层次要素的组合和抽象，也需要更复杂的控制器实现。
+Pod的编排实现可以认为是应用编排中的共性部分，生产中不同类型的应用还有更多的个性化编排需求，如下图所示。为满足不同类型应用的编排需求，k8s提供了多种类型的控制器，如右下所示，每一种控制器对应一种编排模板的定义和一种编排控制逻辑的实现。
+![image](https://github.com/user-attachments/assets/ae899509-fbb4-46bd-ba9c-9a7bb882e28e)
 
+工作负载及其控制器实现原理
+k8s将运行在k8s系统中的应用称为工作负载—workload，每个工作负载都由特定类型的控制器对其编排控制。因此应用在部署为k8s的工作负载时需要为其选择合适的控制器类型并编写对应的编排模板。Deployment、StatefulSet、DaemonSet、Job、CronJob是四种常用的控制器类型，ReplicaSet通常不直接使用，这些控制器都包含在k8s的controller-manager组件。
 
+应用部署为工作负载总体分为两步：  
+1. 编写特定类型控制器的编排模板并提交给k8s的API Server；
+2. 控制器监听并获取新创建的该类型编排模板，根据模板信息进行工作负载的创建和持续维护。整体实现机制如下图所示。  
+# TBD
+
+###  Kubernetes核心概念-可观察性
+![image](https://github.com/user-attachments/assets/11029ae3-5182-434d-8ea3-e63b7c3983c8)
+![image](https://github.com/user-attachments/assets/218e85e8-c755-433d-b3a1-9cd849b9d3a6)
+
+### 云原生可观察性解决方案
+![image](https://github.com/user-attachments/assets/483805f8-92cc-4014-a5d0-a079aa2873b7)
+![image](https://github.com/user-attachments/assets/4563b3a3-20c4-4d66-a3b4-f09f96c50455)
 
 
 
