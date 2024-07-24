@@ -176,7 +176,6 @@ OpenStack创建虚拟机的信令流程如下图所示，由服务间调用和�
 内容：负责服务器选型、软硬件初始化、服务上下线、配置监控、查看监控等  
 特点：服务器少、业务需求比较简单，少数运维工程师即可完成运维工作，不会成为业务正常运行的瓶颈；没有标准化流程，运维质量无法评估  
 
-
 工具化阶段  
 背景：随着行业的发展，业务系统变得愈加复杂，无法只靠人工完成运维工作  
 内容：将部分运维操作及重复性工作流程编写成脚本自动执行，代替人工  
@@ -340,7 +339,37 @@ Kubernetes Scheduler负责Pod调度，其作用是将待调度的Pod按照特定
 启下：在安置工作完成后，目标Node上的Kubelet服务进程接管后继工作，负责Pod之后的生命周期。  
 ![image](https://github.com/user-attachments/assets/f9ce44d6-727f-4e66-b5cd-6c6ad2e4b202)
 
+##### kubelet&kube-proxy
+###### kubelet
+Kubernetes集群中，每个Node上都会启动一个kubelet服务进程；该进程负责处理Master下发到本节点的任务，管理Pod及Pod中的容器  
+每个kubelet进程都会在API Server上注册节点自身的信息，定期向Master汇报节点资源的使用情况，并通过cAdvisor监控容器和节点资源  
 
+kubelet主要功能如下：
+&emsp;&emsp;节点管理
+&emsp;&emsp;Pod管理
+&emsp;&emsp;容器健康检查
+&emsp;&emsp;&emsp;&emsp;1. LivenessProbe探针
+&emsp;&emsp;&emsp;&emsp;2. ReadinessProbe探针
+&emsp;&emsp;cAdvisor资源监控
+
+kube-proxy
+Kubernetes集群中，每个Node上都会启动一个kubeproxy服务进程；可将该进程视为Service的透明代理兼负载均衡器，其核心功能是将某个Service的访问请求转发到后端的多个Pod实例上
+kube-proxy 针 对 Service 和 Pod 创 建 的 一 些主要iptables规则如下：
+1. KUBE-CLUSTER-IP：在指定情况下对Service Cluster IP地址进行伪装，以解决数据包欺骗问题；
+2. KUBE-EXTERNAL-IP：将数据包伪装成Service的外部IP地址；
+3. KUBE-LOAD-BALANCER,KUBE-LOAD-BALANCERLLOCAL：伪装Load Balancer类型的Service流量
+4. KUBE-NODE-PORT-TCP等：伪装NodePort类型的Service流量
+
+#### Kubernetes存储概述
+Kubernetes对于有状态的应用或者对数据需要持久化的应用，提供了可靠的存储机制来保存应用产生的重要数据，可以确保容器应用在重建之后仍然可以使用原有的数据。在Kubernetes中屏蔽了底层存储的实现细节，因此没有传统的块存储、文件存储等存储概念，它从管理员的管理视角、用户的使用视角引入了对应的PV（Persistent Volume）和PVC（Persistent Volume Claim）两个资源对象实现对存储的管理。
+
+PV：是对底层网络共享存储的抽象，是一种可供容器应用消费的资源。PV与实际的存储系统直接对应，它后端对应的既可以是类似云硬盘的块设备，也可以是一个共享文件系统。因为与实际的存储系统有关，因此PV一般需要由管理员进行创建、销毁等管理操作。
+
+PVC：是用户对存储资源的一个使用申明，用户只需要创建PVC，系统会根据用户申明的空间大小、读写模式等自动绑定到一个合适的PV上，这样用户就可以实际使用PV对应的后端存储。
+
+StorageClass：从以上可以看出，管理员负责创建PV，用户通过PVC消费PV，这个过程相对割裂，没有足够的自动化，无法满足容器应用的敏捷性要求。因此，Kubernetes引入了StorageClass的概念，管理员可以将存储资源定义为某种类别（Class），用户指定StorageClass即可实现对存储资源的申请，这样就实现了存储系统的动态供应，实现了存储卷的按需创建，真正做到了共享存储的自动化管理。
+
+CSI：Kubernetes从1.9版本开始引入容器存储接口Container Storage Interface（CSI）机制，目标是在Kubernetes和外部存储系统之间建立一套标准的存储管理接口，通过该接口提供存储服务
 
 
 
