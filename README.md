@@ -18,15 +18,15 @@
 
 This article provides a comprehensive overview of cloud-native computing technology, covering the following key aspects:
 
-1. **[Concepts of Cloud Computing](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter1.md)**: Introduces the basic definitions of cloud computing, its evolution, and its significance in the modern technology ecosystem.
+1. **[Concepts of Cloud Computing](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter1_EN.md)**: Introduces the basic definitions of cloud computing, its evolution, and its significance in the modern technology ecosystem.
 
-2. **[Cloud Computing Infrastructure and Core Technologies](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter2.md)**: Delves into the infrastructure of cloud computing, including virtualization technologies, container technologies (Kubernetes), and service meshes (such as Istio), their roles and implementations.
+2. **[Cloud Computing Infrastructure and Core Technologies](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter2_EN.md)**: Delves into the infrastructure of cloud computing, including virtualization technologies, container technologies (Kubernetes), and service meshes (such as Istio), their roles and implementations.
 
-3. **[Platform Applications and Core Technologies](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter3.md)**: Analyzes the application scenarios of cloud platforms (such as AWS, Azure, Google Cloud), core services, and how to utilize these platforms for efficient development and deployment.
+3. **[Platform Applications and Core Technologies](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter3_EN.md)**: Analyzes the application scenarios of cloud platforms (such as AWS, Azure, Google Cloud), core services, and how to utilize these platforms for efficient development and deployment.
 
-4. **[Software as a Service (SaaS)](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter4.md)**: Explains the concept of SaaS, its advantages, and some typical SaaS application cases such as Salesforce and Google Workspace.
+4. **[Software as a Service (SaaS)](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter4_EN.md)**: Explains the concept of SaaS, its advantages, and some typical SaaS application cases such as Salesforce and Google Workspace.
 
-5. **[Cloud-Native Computing](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter5.md)**: Defines cloud-native computing, describes its differences from traditional computing models, and its application in microservices architecture and DevOps practices.
+5. **[Cloud-Native Computing](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter5_EN.md)**: Defines cloud-native computing, describes its differences from traditional computing models, and its application in microservices architecture and DevOps practices.
 
-6. **[Cloud-Native Software Architecture](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter6.md)**: Provides a detailed introduction to the design principles of cloud-native software architecture, including The Twelve-Factor App, serverless architecture, event-driven architecture, and more.
+6. **[Cloud-Native Software Architecture](https://github.com/Micuris/Notes-on-Cloud-Native-Computing-technology/blob/main/Chapter6_EN.md)**: Provides a detailed introduction to the design principles of cloud-native software architecture, including The Twelve-Factor App, serverless architecture, event-driven architecture, and more.
 
